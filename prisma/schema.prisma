@@ -1,0 +1,20 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// defines the database, migrates the database, and allows us to interact with the database
+
+generator client {
+  provider = "prisma-client-js" // creates a library to interact with the database via import { PrismaClient } from '@prisma/client'
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id   Int    @id @default(autoincrement())
+  name String
+}
+
+// to update database accordingly, npx prisma migrate dev --name init
+// --name init is optional, it is just to name the migration (init in this case)
