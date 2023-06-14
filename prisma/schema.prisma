@@ -2,19 +2,67 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 // defines the database, migrates the database, and allows us to interact with the database
 
+// defines the generator, which allows us to interact with the database
+// can have multiple generators
 generator client {
   provider = "prisma-client-js" // creates a library to interact with the database via import { PrismaClient } from '@prisma/client'
 }
 
+// defines the database. Only ever one database.
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql" // name of the database
+  url      = env("DATABASE_URL") // link to the database
 }
 
 model User {
-  id   Int    @id @default(autoincrement())
-  name String
+  id             String  @id @default(uuid()) // each row is a field; each field has four parts: name, type, modifier, and attributes. all attributes start with @; attributes and modifier b  are optional
+  name           String
+  email          String
+  isAdmin        Boolean
+  favoriteNumber BigInt?
+  preferences    Json? // Json is a type
+  blob           Bytes? // raw bytes
+  // blob2          Unsupported("") // used when migrating existing databases; will never be used in new databases
+  writtenPosts   Post[]  @relation("writtenPosts")
+  favoritePosts  Post[]  @relation("favoritePosts")
+  role           Role    @default(BASIC)
+
+  //block-level attributes
+  @@unique([email, name]) // unique constraint: cannot have two users with the same email and name
+  @@index([email]) // index: allows for faster searching 
+}
+
+//* ========= modifiers ===========
+// only two: ? and []. ? means optional, [] means array; especially useful for relationships
+
+model Post {
+  id            String     @id @default(uuid())
+  rating        Float // Decimal is higher precision than Float
+  createdAt     DateTime   @default(now()) // DateTime is the only time-based type
+  author        User       @relation("writtenPosts", fields: [authorId], references: [id]) // relationships in postgres
+  authorId      String
+  favoritedBy   User       @relation("favoritePosts", fields: [favoritedById], references: [id])
+  favoritedById String
+  categories    Category[]
+  updatedAt     DateTime   @updatedAt
+
+  // @@id([title, authorId]) // composite primary key; replaces the default id
+}
+
+// many-to-many relationship. posts can have many categories, and categories can have many posts
+// automatically creates a join table
+
+model Category {
+  id    String @id @default(uuid())
+  name  String
+  posts Post[]
 }
 
 // to update database accordingly, npx prisma migrate dev --name init
 // --name init is optional, it is just to name the migration (init in this case)
+
+enum Role {
+  BASIC
+  EDITOR
+  ADMIN
+}
